@@ -1,0 +1,9 @@
+dev notes — stashed before switching branches
+
+GTF{st4sh_k33ps_y0ur_w0rk}
+
+TODO:
+- finish refactor.js tests
+- check edge cases with empty strings
+- ask Dev2 about the sanitize helper
+- rebase before opening PR
