@@ -1,4 +1,5 @@
 // Session management
+// GTF{ch3rry_p1ck_c0p13s_c0mm1ts}
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 
 function createSession(userId) {
