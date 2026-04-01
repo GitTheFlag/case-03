@@ -1,0 +1,71 @@
+name: Flag Validator
+
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Validate flag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const crypto = require('crypto')
+            const title = context.payload.issue.title.trim()
+            const hash = crypto.createHash('sha256').update(title).digest('hex')
+            const flags = {
+              'c80dcdc42eb82c7d6698e6ca7a980f9b82ba402c98a417fb87a7d53923ddf3fd': {
+                num: 1,
+                msg: '🎉 Flag 1 found! You recovered the stash.',
+                why: '> **What you learned:** `git stash` saves work-in-progress without committing it. The stash lives at `refs/stash` — a real git ref that can be pushed to a remote and fetched by anyone. This is how unfinished work gets left behind without appearing in `git log`.'
+              },
+              '0e74def4d6e597a408f5ccf607557cc82e248eb151b6ac58d9d951b0a300bc96': {
+                num: 2,
+                msg: '🎉 Flag 2 found! You found the pre-rebase commits.',
+                why: '> **What you learned:** `git rebase` rewrites history by replaying commits on top of a new base. The originals disappear from the branch but still exist in the object store. `git reflog` (locally) or a backup branch (here) can surface them. Nothing is truly deleted until git runs garbage collection.'
+              },
+              'ab293dd48886b20938ab2968bb2ed8aad6f85cdfef1aa673de15cf1c1da9ef69': {
+                num: 3,
+                msg: '🎉 Flag 3 found! You spotted the cherry-pick difference.',
+                why: '> **What you learned:** `git cherry-pick` copies a commit from one branch to another. The new commit has the same changes but a different hash — and any edits made during the pick are silent. `git diff` between branches reveals what the cherry-pick quietly left behind.'
+              },
+              'e449d66e47b1c2da14b51cf9ac810917bff399d0a811b28efb33eefd4555623a': {
+                num: 4,
+                msg: '🎉 Flag 4 found! You recovered the abandoned work.',
+                why: '> **What you learned:** `git reflog` records every HEAD movement in your local repo — commits, checkouts, rebases, resets, force-pushes. When a branch is force-pushed or a commit is "lost", reflog is your recovery tool: find the hash, run `git show <hash>`, and nothing is gone.'
+              }
+            }
+            const entry = flags[hash]
+            if (entry) {
+              const player = context.payload.issue.user.login
+              await github.rest.issues.update({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title: `✅ Flag ${entry.num} — found by @${player}`,
+                state: 'closed'
+              })
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `✅ Correct!\n\n${entry.msg}\n\n${entry.why}\n\n---\nKeep going — find all 4 flags then complete the final task.`
+              })
+              await github.rest.issues.addLabels({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                labels: ['solved']
+              })
+            } else {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: `❌ Not quite. Keep exploring!\n\nRemember: flags look like \`GTF{...}\`\n\nHint: check every branch with \`git branch -a\`, and try \`git log --all --oneline\` to see the full history.`
+              })
+            }
