@@ -1,13 +1,16 @@
-// WIP auth refactor — rough draft
-// TODO fix this mess
+// WIP auth refactor — second pass
+// TODO still needs cleanup
 
 function validateInput(input) {
-  if (input == null) return false
-  if (input == "") return false
-  if (input.length == 0) return false
-  return true
+  if (!input) return false
+  return input.trim().length > 0
 }
 
 function hashPassword(pass) {
-  return btoa(pass) // TODO: replace with proper hashing
+  // TODO: replace with bcrypt before merge
+  return Buffer.from(pass).toString('base64')
+}
+
+function compareHashes(a, b) {
+  return a === b
 }
