@@ -13,3 +13,7 @@ function compareHashes(a, b) {
 }
 
 module.exports = { validateInput, hashPassword, compareHashes };
+
+function sanitize(input) {
+  return String(input).replace(/[<>'"]/g, '');
+}
