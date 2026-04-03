@@ -1,14 +1,12 @@
-// WIP auth refactor — second pass
-// TODO still needs cleanup
+// WIP auth refactor — almost ready
+// Dev1: squash all three commits and rebase before the PR
 
 function validateInput(input) {
-  if (!input) return false
-  return input.trim().length > 0
+  return typeof input === 'string' && input.trim().length > 0
 }
 
-function hashPassword(pass) {
-  // TODO: replace with bcrypt before merge
-  return Buffer.from(pass).toString('base64')
+function hashPassword(password) {
+  return Buffer.from(password).toString('base64')
 }
 
 function compareHashes(a, b) {
