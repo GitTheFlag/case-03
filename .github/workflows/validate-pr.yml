@@ -1,22 +1,27 @@
 name: Final Task Validator
 
 on:
-  pull_request:
+  pull_request_target:
     branches: [main]
 
 jobs:
   check-branches-merged:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
 
       - name: Check feature branches are merged
+        id: check
         run: |
           git fetch --all
           MISSING=""
-          for branch in feature/refactor; do
+          for branch in feature/refactor hotfix/session; do
             if ! git merge-base --is-ancestor "origin/$branch" HEAD; then
               MISSING="$MISSING $branch"
             fi
@@ -24,6 +29,31 @@ jobs:
           if [ -n "$MISSING" ]; then
             echo "❌ These branches are not yet merged:$MISSING"
             echo "Merge them into your solution branch before opening the PR."
-            exit 1
+            echo "valid=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ All branches merged. Case closed."
+            echo "valid=true" >> $GITHUB_OUTPUT
           fi
-          echo "✅ All branches merged. Case closed."
+
+      - name: Close PR with success message
+        if: steps.check.outputs.valid == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const player = context.payload.pull_request.user.login
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `✅ **Case closed, @${player}!**\n\nYour branch contains the rewritten history.\n\n> **What you learned:** \`git rebase\` rewrites commits onto a new base, making history linear. The original commits are not deleted immediately — they live on in \`git reflog\` until garbage collection. This is why force-pushed history is recoverable if you act quickly.\n\n---\nCase 03 complete. Try [Case 04](https://github.com/GitTheFlag/case-04) next. 🚩`
+            })
+            await github.rest.pulls.update({
+              pull_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'closed'
+            })
+
+      - name: Fail if branches not merged
+        if: steps.check.outputs.valid != 'true'
+        run: exit 1
